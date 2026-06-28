@@ -1,242 +1,108 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useTranslation } from 'react-i18next';
+import { useState } from "react";
 import {
   Send,
+  Paperclip,
   Mic,
-  MicOff,
-  Image,
-  FileText,
-  X,
-  Square,
-} from 'lucide-react';
-import { cn } from '../ui/utils';
+  Sparkles,
+} from "lucide-react";
 
-interface ChatInputProps {
-  onSend: (message: string) => void;
-  onStop?: () => void;
-  isGenerating?: boolean;
-  disabled?: boolean;
+interface Props {
+  onSend?: (message: string) => void;
 }
 
-export function ChatInput({ onSend, onStop, isGenerating, disabled }: ChatInputProps) {
-  const { t } = useTranslation();
-  const [message, setMessage] = useState('');
-  const [isListening, setIsListening] = useState(false);
-  const [attachedFile, setAttachedFile] = useState<File | null>(null);
-  const [filePreview, setFilePreview] = useState<string | null>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+export default function ChatInput({
+  onSend,
+}: Props) {
+  const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.style.height = 'auto';
-      inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 200)}px`;
-    }
-  }, [message]);
+  const handleSend = () => {
+    if (!message.trim()) return;
 
-  // Speech Recognition Setup
-  useEffect(() => {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+    onSend?.(message.trim());
 
-    if (SpeechRecognition) {
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'en-IN';
+    setMessage("");
+  };
 
-      recognitionRef.current.onresult = (event) => {
-        const transcript = Array.from(event.results)
-          .map((result) => result[0].transcript)
-          .join('');
-        setMessage(transcript);
-      };
-
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-      };
-
-      recognitionRef.current.onerror = () => {
-        setIsListening(false);
-      };
-    }
-  }, []);
-
-  const handleSend = useCallback(() => {
-    if (isGenerating && onStop) {
-      onStop();
-      return;
-    }
-
-    if (!message.trim() && !attachedFile) return;
-
-    let finalMessage = message.trim();
-    if (attachedFile) {
-      finalMessage += `\n\n[Attached: ${attachedFile.name}]`;
-    }
-
-    onSend(finalMessage);
-    setMessage('');
-    setAttachedFile(null);
-    setFilePreview(null);
-  }, [message, attachedFile, isGenerating, onSend, onStop]);
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
 
-  const toggleVoice = () => {
-    if (!recognitionRef.current) return;
-
-    if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    } else {
-      recognitionRef.current.start();
-      setIsListening(true);
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setAttachedFile(file);
-
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setFilePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setFilePreview(null);
-    }
-  };
-
-  const removeFile = () => {
-    setAttachedFile(null);
-    setFilePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
   return (
-    <div className="relative">
-      {/* File Preview */}
-      <AnimatePresence>
-        {attachedFile && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute -top-20 left-4 right-4 flex items-center gap-3 rounded-xl border border-white/10 bg-[#111827] p-3"
-          >
-            {filePreview ? (
-              <img src={filePreview} alt="Preview" className="h-12 w-12 rounded-lg object-cover" />
-            ) : (
-              <div className="h-12 w-12 rounded-lg bg-white/10 flex items-center justify-center">
-                <FileText size={20} className="text-white/50" />
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{attachedFile.name}</p>
-              <p className="text-xs text-white/50">{(attachedFile.size / 1024).toFixed(1)} KB</p>
-            </div>
-            <button onClick={removeFile} className="p-2 rounded-lg hover:bg-white/10 text-white/50 hover:text-white transition">
-              <X size={16} />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div className="rounded-[32px] border border-cyan-500/20 bg-[#0B0F19] p-5">
 
-      {/* Input Container */}
-      <div className="flex items-end gap-3 rounded-3xl border border-white/10 bg-[#111827]/80 backdrop-blur-xl p-4">
-        {/* File Upload Buttons */}
-        <div className="flex items-center gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*,.pdf"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/50 transition hover:bg-white/10 hover:text-cyan-400 hover:border-cyan-400/30"
-            title={t('chat.uploadImage')}
-          >
-            <Image size={18} />
-          </button>
-        </div>
+      <div className="flex items-center gap-3">
 
-        {/* Text Input */}
+        {/* Attachment */}
+
+        <button
+          className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/60 transition-all duration-300 hover:scale-105 hover:border-cyan-400 hover:text-cyan-400"
+        >
+          <Paperclip size={20} />
+        </button>
+
+        {/* Input */}
+
         <div className="relative flex-1">
-          <textarea
-            ref={inputRef}
+
+          <input
+            type="text"
+            placeholder="Ask about schemes, scholarships, pensions..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={t('chat.inputPlaceholder')}
-            disabled={disabled}
-            rows={1}
-            className="w-full resize-none bg-transparent text-white placeholder:text-white/30 outline-none text-base leading-relaxed max-h-[200px] disabled:opacity-50"
+            className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pl-5 pr-14 text-white placeholder:text-white/30 outline-none transition-all duration-300 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20"
           />
+
+          <Sparkles
+            size={18}
+            className="absolute right-5 top-1/2 -translate-y-1/2 text-cyan-400"
+          />
+
         </div>
 
-        {/* Voice Input */}
+        {/* Voice */}
+
         <button
-          onClick={toggleVoice}
-          disabled={!recognitionRef.current}
-          className={cn(
-            'flex h-11 w-11 items-center justify-center rounded-xl border transition',
-            isListening
-              ? 'border-red-500/50 bg-red-500/20 text-red-400 animate-pulse'
-              : 'border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:text-purple-400 hover:border-purple-400/30'
-          )}
-          title={t('chat.voiceInput')}
+          className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/60 transition-all duration-300 hover:scale-105 hover:border-purple-400 hover:text-purple-400"
         >
-          {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+          <Mic size={20} />
         </button>
 
-        {/* Send/Stop Button */}
-        <motion.button
+        {/* Send */}
+
+        <button
           onClick={handleSend}
-          disabled={(isGenerating ? !onStop : (!message.trim() && !attachedFile)) || disabled}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className={cn(
-            'flex h-11 w-11 items-center justify-center rounded-xl transition',
-            isGenerating
-              ? 'border border-red-500/50 bg-red-500/20 text-red-400 hover:bg-red-500/30'
-              : 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg shadow-cyan-500/20 disabled:opacity-40 disabled:cursor-not-allowed'
-          )}
-          title={isGenerating ? t('chat.stopGenerating') : t('chat.send')}
+          disabled={!message.trim()}
+          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white transition-all duration-300 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {isGenerating ? <Square size={18} /> : <Send size={18} />}
-        </motion.button>
+          <Send size={20} />
+        </button>
+
       </div>
 
-      {/* Voice Listening Indicator */}
-      <AnimatePresence>
-        {isListening && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 px-4 py-2 text-sm text-white"
-          >
-            <Mic size={14} className="text-cyan-400" />
-            {t('chat.speakNow')}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Footer */}
+
+      <div className="mt-4 flex items-center justify-between text-xs text-white/40">
+
+        <span>
+          Press <b>Enter</b> to send
+        </span>
+
+        <span className="flex items-center gap-2">
+
+          <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+
+          SchemeGPT-X AI Online
+
+        </span>
+
+      </div>
+
     </div>
   );
 }

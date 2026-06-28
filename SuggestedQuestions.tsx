@@ -1,65 +1,82 @@
-import { motion } from 'framer-motion';
-import { useTranslation } from 'react-i18next';
-import { Sparkles, MessageSquare } from 'lucide-react';
+import {
+  GraduationCap,
+  FileText,
+  Clock3,
+  IndianRupee,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 
-interface SuggestedQuestionsProps {
-  onSelectQuestion: (question: string) => void;
+interface Props {
+  onSelect?: (question: string) => void;
 }
 
-const suggestedQuestions = [
+const questions = [
   {
-    en: 'What schemes am I eligible for based on my profile?',
-    hi: 'मेरी प्रोफ़ाइल के आधार पर मैं किन योजनाओं के लिए पात्र हूं?',
+    icon: <GraduationCap size={18} />,
+    title: "Scholarships",
+    question: "Which scholarships am I eligible for?",
   },
   {
-    en: 'List all scholarships available for OBC students',
-    hi: 'OBC छात्रों के लिए सभी छात्रवृत्तियां सूचीबद्ध करें',
+    icon: <IndianRupee size={18} />,
+    title: "Benefits",
+    question: "How much government benefit can I receive?",
   },
   {
-    en: 'How to apply for PM Kisan Samman Nidhi?',
-    hi: 'PM किसान सम्मान निधि के लिए कैसे आवेदन करें?',
+    icon: <FileText size={18} />,
+    title: "Documents",
+    question: "Which documents are missing in my profile?",
   },
   {
-    en: 'What are the deadlines for National Scholarship Portal?',
-    hi: 'राष्ट्रीय छात्रवृत्ति पोर्टल की समय सीमा क्या है?',
+    icon: <Clock3 size={18} />,
+    title: "Deadlines",
+    question: "Show schemes closing this week.",
   },
   {
-    en: 'Compare PM Awas Yojana with State Housing Schemes',
-    hi: 'PM आवास योजना की तुलना राज्य आवास योजनाओं से करें',
+    icon: <ShieldCheck size={18} />,
+    title: "Eligibility",
+    question: "Check my eligibility for all schemes.",
   },
   {
-    en: 'What documents are required for Post Matric Scholarship?',
-    hi: 'पोस्ट मैट्रिक छात्रवृत्ति के लिए कौन से दस्तावेज आवश्यक हैं?',
+    icon: <Sparkles size={18} />,
+    title: "AI Recommendation",
+    question: "Recommend the best schemes for me.",
   },
 ];
 
-export function SuggestedQuestions({ onSelectQuestion }: SuggestedQuestionsProps) {
-  const { t, i18n } = useTranslation();
-  const isHindi = i18n.language === 'hi';
-
+export default function SuggestedQuestions({
+  onSelect,
+}: Props) {
   return (
-    <div>
-      <h3 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-4 flex items-center gap-2">
-        <Sparkles size={14} className="text-cyan-400" />
-        {t('chat.suggestedQuestions')}
-      </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        {suggestedQuestions.map((q, index) => (
-          <motion.button
-            key={index}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.05 }}
-            onClick={() => onSelectQuestion(q[isHindi ? 'hi' : 'en'])}
-            className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3 text-left transition-all hover:border-cyan-500/30 hover:bg-white/10"
-          >
-            <MessageSquare size={16} className="text-white/40 shrink-0 group-hover:text-cyan-400 transition" />
-            <p className="text-sm text-white/70 group-hover:text-white transition truncate">
-              {q[isHindi ? 'hi' : 'en']}
-            </p>
-          </motion.button>
-        ))}
-      </div>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+      {questions.map((item) => (
+        <button
+          key={item.title}
+          onClick={() => onSelect?.(item.question)}
+          className="group rounded-3xl border border-white/10 bg-[#111827] p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-cyan-400 hover:bg-cyan-500/10"
+        >
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white">
+
+            {item.icon}
+
+          </div>
+
+          <h3 className="mt-5 text-lg font-semibold text-white">
+
+            {item.title}
+
+          </h3>
+
+          <p className="mt-2 text-sm leading-6 text-white/50 group-hover:text-white/70">
+
+            {item.question}
+
+          </p>
+
+        </button>
+      ))}
+
     </div>
   );
 }
